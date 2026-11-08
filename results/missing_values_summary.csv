@@ -1,0 +1,8 @@
+metric,value
+total_rows,124320
+total_columns,6322
+total_elements,785951040
+total_missing_values,580035466
+overall_missing_percentage,73.80%
+rows_with_at_least_one_missing,124320
+rows_with_missing_percentage,100.00%
