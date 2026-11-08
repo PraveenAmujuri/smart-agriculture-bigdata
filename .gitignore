@@ -1,0 +1,17 @@
+# Dataset files
+data/raw/*
+data/extracted/*
+data/processed/*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Temporary files
+*.log
+*.tmp
+
+# IDE
+.vscode/
+.idea/
