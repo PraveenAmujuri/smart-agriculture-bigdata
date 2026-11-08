@@ -1,0 +1,13 @@
+metric,kmeans,fuzzy_kmeans
+num_clusters,5,5
+iterations,10,10
+execution_time_minutes,3.92,9.80
+wcss_inertia,1568053.21,2152892.04
+mean_intercluster_distance,5.3406,2.2515
+min_intercluster_distance,2.8332,0.2971
+max_intercluster_distance,8.4852,3.9586
+cluster_0_size,19934,16966
+cluster_1_size,35765,40889
+cluster_2_size,17191,30306
+cluster_3_size,25734,22101
+cluster_4_size,25696,14058

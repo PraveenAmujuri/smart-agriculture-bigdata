@@ -1,0 +1,6 @@
+cluster,zone_name,dominant_crops,key_characteristics,sample_states
+0,Northern Plains Spring Wheat Belt,Spring Wheat & Winter Wheat,Cooler temperatures, shorter growing season, vast spring wheat acreage,North Dakota, South Dakota, Montana
+1,Prime Midwest Corn-Soy Belt,Corn & Soybeans,Highest corn (126.1 bu/ac) and soybean (40.7 bu/ac) productivity, optimal precipitation & deep mollisol soils,Iowa, Illinois, Indiana, Ohio, Southern Minnesota
+2,Southern Cotton Belt,Upland Cotton & Peanuts,Warm humid climate, long growing season, 7.2k cotton observations,Mississippi, Alabama, Georgia, Arkansas, Louisiana
+3,Central Transition & Sorghum Zone,Corn, Soybeans & Grain Sorghum,Moderate-to-high rainfall, transitional temperate climate, strong grain sorghum yields,Kansas, Missouri, Kentucky, Tennessee
+4,Semi-Arid Western Plains & Marginal Zone,Grain Sorghum & Drought-Tolerant Crops,Lower soil moisture, higher heat stress, lower average corn/soybean yields,Texas Panhandle, Western Oklahoma, Western Nebraska, Eastern Colorado
