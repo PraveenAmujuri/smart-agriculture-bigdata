@@ -25,9 +25,11 @@ def inspect_dataset(file_path):
             with archive.open(item.filename) as file:
 
                 version = np.lib.format.read_magic(file)
-                shape, order, dtype = np.lib.format._read_array_header(
-                    file, version
-                )
+
+                if version == (1, 0):
+                    shape, order, dtype = np.lib.format.read_array_header_1_0(file)
+                else:
+                    shape, order, dtype = np.lib.format.read_array_header_2_0(file)
 
                 print("\nArray:", item.filename)
                 print("Shape:", shape)
