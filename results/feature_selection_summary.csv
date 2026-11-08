@@ -1,0 +1,7 @@
+category,role,start_col,end_col,num_columns
+"Identifiers (FIPS, Year)",Preserve / Context,0,1,2
+USDA Crop Yields,Preserve / Evaluation,2,7,6
+PRISM Weather,Clustering Input,8,371,364
+NLDAS Land Surface,Clustering Input,372,1203,832
+gSSURGO Soil Quality,Clustering Input,6196,6321,126
+USDA Crop Progress,Excluded (High Sparsity),1204,6195,4992
