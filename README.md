@@ -63,23 +63,21 @@ For comparison, each Fuzzy K-Means observation was assigned to its most likely c
 
 ## Screenshots
 
-<!-- Add your screenshot images into docs/screenshots/ and update the paths if needed -->
-
-### Hadoop Cluster & Services Running
+### Hadoop Services Running
 ![Hadoop Services Running](docs/screenshots/hadoop_services.png)  
-*Hadoop daemons (NameNode, DataNode, ResourceManager, NodeManager) active on single-node setup.*
+*Hadoop services running on the system.*
 
-### HDFS Vector Generation
-![HDFS Vectors](docs/screenshots/hdfs_vectors.png)  
-*Mahout SequenceFiles generated in HDFS under `/user/praveen/smart_agriculture/vectors/`.*
+### Overall HDFS Directory Structure
+![HDFS Directory Structure](docs/screenshots/hdfs_structure.png)  
+*HDFS directory structure showing the input, vectors, clusters, and results folders.*
 
-### Mahout MapReduce Clustering
-![Mahout Clustering](docs/screenshots/mahout_clustering.png)  
-*Terminal execution and YARN MapReduce job progress for K-Means and Fuzzy K-Means.*
+### Model Evaluation Results
+![Evaluation Results](docs/screenshots/evaluation_results.png)  
+*Comparison of K-Means and Fuzzy K-Means results, including execution time and cluster sizes.*
 
-### Evaluation & Crop Yield Analysis
-![Model Evaluation](docs/screenshots/evaluation_results.png)  
-*Output of evaluation script showing cluster sizes, ARI metric, and crop yield distributions.*
+### Crop-Yield Analysis
+![Crop Yield Analysis](docs/screenshots/crop_yield_analysis.png)  
+*Crop-yield analysis across the clusters.*
 
 ## How to Run the Project
 
