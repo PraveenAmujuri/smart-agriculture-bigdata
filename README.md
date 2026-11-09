@@ -1,110 +1,123 @@
 # Smart Agriculture Big Data Analytics Using Hadoop and Apache Mahout
 
-A Big Data analytics project using **Apache Hadoop (HDFS, YARN)** and **Apache Mahout** to analyze and cluster US agricultural weather, land-surface, and soil patterns (124,320 county-year observations across 1,322 features) from 1981 to 2020.
+This project uses agricultural data to study how weather and soil conditions vary across different US counties and years. We used Hadoop and Mahout to prepare the data and apply K-Means and Fuzzy K-Means clustering.
 
----
+## Dataset
+We used the **Cornell USCrop dataset** (1981–2020), which contains 124,320 county-year records and 6,322 columns containing identifiers, crop yields, and environmental measurements.
+- Dataset source: https://ecommons.cornell.edu/entities/publication/867a510e-9a59-4466-9f56-1a3a432b200e
+- Extracted data: `data/extracted/data.npy` (5.9 GB)
+- Features selected for clustering: 1,322 continuous features (PRISM weather, NLDAS land surface, and gSSURGO soil properties)
+- Preserved separately: County FIPS, year, and 6 USDA crop yields (corn, cotton, sorghum, soybeans, spring wheat, winter wheat)
+- Excluded: 4,992 weekly crop-progress survey features due to over 93% missing values
 
-## 🌾 Project Overview
+## Technologies Used
+- Ubuntu Linux
+- Apache Hadoop 3.3.6 (HDFS and YARN)
+- Apache Mahout 0.13.0
+- Python 3 with NumPy
 
-- **Dataset:** Cornell USCrop Big Data Dataset (124,320 observations $\times$ 6,322 features).
-- **Selected Clustering Features:** 1,322 features (PRISM weather, NLDAS land surface, gSSURGO soil quality).
-- **Target Analysis:** 6 crop yields (Corn, Cotton, Sorghum, Soybeans, Spring Wheat, Winter Wheat) preserved separately to validate cluster interpretations.
-- **Distributed Processing:** Apache Hadoop 3.3.6 (HDFS, YARN MapReduce) and Apache Mahout 0.13.0.
-- **Algorithms:** Distributed K-Means ($k=5$) vs. Fuzzy K-Means ($k=5, m=2.0$).
-
----
-
-## 🏗️ Repository Architecture
+## Project Structure
 
 ```
 Smart-Agriculture-BigData/
-├── data/
-│   ├── raw/                 # Cornell USCrop dataset (.npz)
-│   ├── extracted/           # Extracted matrix data (.npy)
-│   └── processed/           # Normalized clustering data and metadata
-├── docs/
-│   └── methodology.md       # Detailed technical architecture and math
-├── reports/
-│   └── final_report.md      # Comprehensive academic project report
-├── results/
-│   ├── model_comparison.csv # K-Means vs Fuzzy K-Means benchmarks
-│   ├── crop_yield_by_cluster.csv # Yield distributions across clusters
-│   ├── cluster_agroclimatic_profiles.csv # Identified agricultural zones
-│   ├── cluster_assignments.csv # County-year cluster mappings
-│   ├── kmeans_clusters_dump.txt  # Mahout K-Means cluster centers
-│   └── fkmeans_clusters_dump.txt # Mahout Fuzzy K-Means cluster centers
-├── src/
-│   ├── analysis/
-│   │   ├── analyze_missing_values.py # Missingness analysis
-│   │   ├── select_features.py        # Feature partition script
-│   │   ├── preprocess.py             # Normalization and imputation
-│   │   ├── evaluate_models.py        # Model evaluation & WCSS
-│   │   └── analyze_crop_yields.py    # Crop yield linkage analysis
-│   └── mahout/
-│       ├── run_kmeans.sh             # Mahout K-Means MapReduce job
-│       └── run_fuzzy_kmeans.sh       # Mahout Fuzzy K-Means MapReduce job
-└── README.md
+├── data/       # Raw, processed, and sample dataset files
+├── docs/       # Project methodology and screenshot placeholders
+├── reports/    # Final project report
+├── results/    # Clustering outputs, model metrics, and crop yield analysis
+├── src/        # Python data processing scripts and Mahout shell scripts
+└── README.md   # Project overview, results, and instructions
 ```
 
----
+## Main Steps Followed
+1. Inspected the dataset and checked missing values across feature groups.
+2. Selected 1,322 weather and soil features and excluded sparse survey columns.
+3. Handled missing values using column mean imputation and scaled features to [0, 1].
+4. Copied the data to HDFS and converted text lines into Mahout SequenceFiles.
+5. Ran K-Means and Fuzzy K-Means clustering on Hadoop using $k=5$.
+6. Evaluated cluster sizes, runtimes, and compared cluster assignments with crop yields.
 
-## 🚀 Execution Workflow
+## Algorithms Used
+- **K-Means Clustering:** Hard clustering where each observation belongs to one cluster.
+- **Fuzzy K-Means Clustering:** Soft clustering where points have membership across clusters, with each observation assigned to its most likely cluster for comparison.
 
-### 1. Feature Selection and Preprocessing
-```bash
-# Impute missing values and normalize 1,322 features to [0, 1]
-python3 src/analysis/preprocess.py
-```
+## Results Summary
 
-### 2. Ingest Vectors into HDFS
-```bash
-# Upload converted vectors to HDFS
-hdfs dfs -mkdir -p /user/praveen/smart_agriculture/input
-hdfs dfs -put data/processed/clustering_data.txt /user/praveen/smart_agriculture/input/
+| Metric | K-Means | Fuzzy K-Means |
+| :--- | :---: | :---: |
+| Number of Clusters ($k$) | 5 | 5 |
+| Iterations | 10 | 6 |
+| Execution Time | ~9.80 minutes | ~3.92 minutes |
+| Observations Processed | 124,320 | 124,320 |
+| Cluster 0 Size | 19,934 (16.0%) | 16,966 (13.7%) |
+| Cluster 1 Size | 35,765 (28.8%) | 40,889 (32.9%) |
+| Cluster 2 Size | 17,191 (13.8%) | 30,306 (24.4%) |
+| Cluster 3 Size | 25,734 (20.7%) | 22,101 (17.8%) |
+| Cluster 4 Size | 25,696 (20.7%) | 14,058 (11.3%) |
+| Adjusted Rand Index (ARI) | — | 0.4426 |
 
-# Convert text vectors to Mahout SequenceFiles via MapReduce
-MAHOUT_LOCAL="" mahout seqdirectory \
-  -i /user/praveen/smart_agriculture/input \
-  -o /user/praveen/smart_agriculture/vectors \
-  -xm mapreduce
-```
+For comparison, each Fuzzy K-Means observation was assigned to its most likely cluster. The Adjusted Rand Index of 0.4426 indicates moderate agreement between the K-Means and Fuzzy K-Means assignments, rather than model accuracy. Linking the clusters to the preserved crop yields showed clear differences: for example, Cluster 1 had the highest average corn yields (126.1 bu/acre), Cluster 2 had the largest number of valid cotton yield records, while Cluster 0 had the largest number of valid spring wheat yield records.
 
-### 3. Run Mahout Distributed Clustering
-```bash
-# Run K-Means on Hadoop YARN
-bash src/mahout/run_kmeans.sh
+## Project Documentation
+- [Final Project Report](reports/final_report.md) — Final project report covering preprocessing, Hadoop and Mahout setup, clustering results, and agricultural crop-yield analysis.
+- [Methodology](docs/methodology.md) — Project methodology and implementation details for the Big Data clustering pipeline.
 
-# Run Fuzzy K-Means on Hadoop YARN
-bash src/mahout/run_fuzzy_kmeans.sh
-```
+## Screenshots
 
-### 4. Evaluate Models and Analyze Crop Yields
-```bash
-# Compute WCSS, separation, and model comparison
-python3 src/analysis/evaluate_models.py
+<!-- Add your screenshot images into docs/screenshots/ and update the paths if needed -->
 
-# Link clusters with USDA crop yields and export profiles
-python3 src/analysis/analyze_crop_yields.py
-```
+### Hadoop Cluster & Services Running
+![Hadoop Services Running](docs/screenshots/hadoop_services.png)  
+*Hadoop daemons (NameNode, DataNode, ResourceManager, NodeManager) active on single-node setup.*
 
----
+### HDFS Vector Generation
+![HDFS Vectors](docs/screenshots/hdfs_vectors.png)  
+*Mahout SequenceFiles generated in HDFS under `/user/praveen/smart_agriculture/vectors/`.*
 
-## 📊 Summary of Results
+### Mahout MapReduce Clustering
+![Mahout Clustering](docs/screenshots/mahout_clustering.png)  
+*Terminal execution and YARN MapReduce job progress for K-Means and Fuzzy K-Means.*
 
-### Clustering Performance on Hadoop MapReduce
+### Evaluation & Crop Yield Analysis
+![Model Evaluation](docs/screenshots/evaluation_results.png)  
+*Output of evaluation script showing cluster sizes, ARI metric, and crop yield distributions.*
 
-| Metric | Apache Mahout K-Means | Apache Mahout Fuzzy K-Means | Winner |
-| :--- | :---: | :---: | :---: |
-| **MapReduce Runtime** | **3.92 min** | 9.80 min | **K-Means (2.5x faster)** |
-| **Within-Cluster Sum of Squares (WCSS)** | **1,568,053.21** | 2,152,892.04 | **K-Means (27.2% tighter)** |
-| **Mean Inter-Cluster Separation** | **5.3406** | 2.2515 | **K-Means (more distinct)** |
+## How to Run the Project
 
-### Agro-Climatic Zone Discovery
+> **Notes:**
+> - The original dataset must be available before running preprocessing.
+> - When rerunning conversion or clustering, previous HDFS output directories may need to be removed first to avoid existing-output errors (e.g., using `hdfs dfs -rm -r <path>`).
 
-Without seeing crop yields during training, environmental clustering accurately discovered America's major agricultural belts:
+1. Start Hadoop services:
+   ```bash
+   /usr/local/hadoop/sbin/start-dfs.sh
+   /usr/local/hadoop/sbin/start-yarn.sh
+   ```
 
-- **Cluster 1 (Midwest Corn-Soy Belt):** Highest corn (126.1 bu/ac) and soybean (40.7 bu/ac) yields.
-- **Cluster 2 (Southern Cotton Belt):** Dominates US cotton production (698.3 lbs/ac).
-- **Cluster 0 (Northern Plains Wheat Zone):** Produces 64% of all US spring wheat (42.6 bu/ac).
-- **Cluster 3 (Central Transition Zone):** High grain sorghum (69.7 bu/ac) and diversified grain.
-- **Cluster 4 (Western Semi-Arid Zone):** Lower overall crop yields due to water stress.
+2. Run preprocessing:
+   ```bash
+   python3 src/analysis/select_features.py
+   python3 src/analysis/preprocess.py
+   ```
+
+3. Upload data to HDFS and convert to SequenceFiles:
+   ```bash
+   hdfs dfs -mkdir -p /user/praveen/smart_agriculture/input
+   tr ',' ' ' < data/processed/clustering_data.csv | \
+     hdfs dfs -put - /user/praveen/smart_agriculture/input/clustering_data.txt
+
+   MAHOUT_LOCAL="" mahout org.apache.mahout.clustering.conversion.InputDriver \
+     -i /user/praveen/smart_agriculture/input/ \
+     -o /user/praveen/smart_agriculture/vectors/ \
+     -v org.apache.mahout.math.DenseVector
+   ```
+
+4. Run clustering scripts:
+   ```bash
+   bash src/mahout/run_kmeans.sh
+   bash src/mahout/run_fuzzy_kmeans.sh
+   ```
+
+5. Run evaluation:
+   ```bash
+   python3 src/analysis/evaluate_models.py
+   ```

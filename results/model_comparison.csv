@@ -1,13 +1,19 @@
 metric,kmeans,fuzzy_kmeans
-num_clusters,5,5
-iterations,10,10
-execution_time_minutes,3.92,9.80
-wcss_inertia,1568053.21,2152892.04
-mean_intercluster_distance,5.3406,2.2515
-min_intercluster_distance,2.8332,0.2971
-max_intercluster_distance,8.4852,3.9586
+algorithm,K-Means,Fuzzy K-Means (Most Likely Cluster)
+number_of_clusters,5,5
+convergence_status,Reached maximum iterations (10),Converged early (iteration 6)
+total_iterations,10,6
+execution_time_minutes,9.8,3.92
+total_observations,124320,124320
+adjusted_rand_index_vs_kmeans,1.0,0.4426
+ari_interpretation,Identical reference,Moderate agreement (ARI = 0.4426)
 cluster_0_size,19934,16966
+cluster_0_percentage,16.03%,13.65%
 cluster_1_size,35765,40889
+cluster_1_percentage,28.77%,32.89%
 cluster_2_size,17191,30306
+cluster_2_percentage,13.83%,24.38%
 cluster_3_size,25734,22101
+cluster_3_percentage,20.70%,17.78%
 cluster_4_size,25696,14058
+cluster_4_percentage,20.67%,11.31%

@@ -1,95 +1,192 @@
-# Final Project Report: Smart Agriculture Big Data Analytics
+# Project Report: Smart Agriculture Big Data Analytics Using Hadoop and Apache Mahout
 
-**Technologies Used:** Apache Hadoop 3.3.6, Apache Mahout 0.13.0, HDFS, YARN MapReduce, Python 3 / NumPy  
-**Dataset:** Cornell USCrop Agricultural Big Data (124,320 observations x 6,322 features)  
-**Task:** Unsupervised Agro-Climatic Clustering and Crop Yield Analysis  
-
----
-
-## 1. Executive Summary
-
-This project deployed an end-to-end Big Data analytics pipeline using Apache Hadoop and Apache Mahout to cluster 124,320 United States county-year agricultural observations (1981–2020). By selecting 1,322 environmental features spanning PRISM weather, NLDAS land-surface hydrology, and gSSURGO soil quality, we trained **K-Means** and **Fuzzy K-Means** distributed clustering models on Hadoop YARN.
-
-Evaluating the resulting clusters against separately preserved USDA crop yield records revealed that the unsupervised environmental clusters directly correspond to the five primary agricultural production belts in the United States. K-Means outperformed Fuzzy K-Means across all Big Data benchmarks, achieving a 27.2% lower Within-Cluster Sum of Squares (1.57M vs 2.15M) and executing in 3.92 minutes compared to 9.80 minutes on Hadoop YARN.
+Course: Big Data Analytics Mini-Project  
+Technologies: Apache Hadoop 3.3.6, Apache Mahout 0.13.0, HDFS, YARN MapReduce, Python 3, NumPy  
+Dataset: Cornell USCrop Dataset (1981–2020)  
 
 ---
 
-## 2. Big Data Architecture and Workflow
+# Introduction
 
+In agriculture, crop growth and yield depend on environmental factors like rainfall, temperature, and soil quality. Farmers and researchers track these conditions across different counties over many years to see how regional conditions affect different crops. Because this data covers thousands of counties over four decades with measurements recorded every week, the resulting datasets are large and difficult to work with on a regular computer.
+
+In this mini-project, we used the Cornell USCrop dataset to study agricultural patterns across US counties from 1981 to 2020. We used Apache Hadoop for distributed data storage and processing, and Apache Mahout to run two clustering algorithms: K-Means and Fuzzy K-Means. By clustering counties based on physical weather and soil features, we examined whether these groups show noticeable differences in crop yields without using crop data during the clustering process.
+
+---
+
+# Problem Statement
+
+Working with multi-decade agricultural data presents practical challenges:
+- The raw dataset is 5.9 GB uncompressed, which can cause out-of-memory errors if loaded into RAM all at once.
+- The dataset contains 6,322 columns per row, many of which are weekly survey questions with large amounts of missing data.
+- Processing and clustering this volume of data on a single machine can be slow or fail completely without distributed tools.
+
+We need a simple workflow to filter out sparse columns, normalize the remaining features, store the data in Hadoop HDFS, run clustering algorithms through Apache Mahout, and check if the resulting clusters match real-world agricultural differences.
+
+---
+
+# Objectives
+
+The main objectives of this project are:
+- Inspect the dataset and analyze missing values across different feature groups.
+- Select continuous weather and soil features for clustering, while keeping crop yields and county identifiers separate.
+- Handle missing values and scale the clustering features to the range 0 to 1.
+- Upload the processed data to HDFS and convert it to SequenceFiles required by Apache Mahout.
+- Run K-Means and Fuzzy K-Means clustering using 5 clusters on Hadoop YARN.
+- Compare the execution time, iterations, and cluster assignments of both models.
+- Analyze crop-yield averages across the clusters to see if environmental groupings reflect different agricultural characteristics.
+
+---
+
+# Dataset Description
+
+We used the Cornell USCrop dataset, which contains county-year records from 1981 to 2020 for agricultural counties across the United States.
+
+- Dataset source: https://ecommons.cornell.edu/entities/publication/867a510e-9a59-4466-9f56-1a3a432b200e
+- Extracted file: `data/extracted/data.npy` (5.9 GB)
+- Total rows: 124,320 observations (one row per county per year)
+- Total columns: 6,322 features
+
+The columns in the dataset fall into several main groups:
+- Identifiers (columns 0–1): County FIPS code and year (0% missing).
+- Crop yields (columns 2–7): USDA reported yields for corn, upland cotton, sorghum, soybeans, spring wheat, and winter wheat.
+- Weather data (columns 8–371): 52-week PRISM measurements of rainfall, temperature, dew point, and vapor pressure (0% missing).
+- Land surface data (columns 372–1203): 52-week NLDAS measurements of soil moisture across multiple depths, soil temperature, and runoff (0.02% missing).
+- Crop progress surveys (columns 1204–6195): Weekly survey questions about planting, blooming, and harvesting progress (93.38% missing).
+- Soil quality (columns 6196–6321): gSSURGO measurements including sand, silt, clay, and organic matter percentages (0% missing).
+
+During our missing-value analysis, we found that more than 99.9% of all missing values in the dataset came from the crop-progress survey columns. These surveys are only conducted in counties and weeks where specific crops are actively grown, leaving 2,583 columns completely empty. Because of this high sparsity, we excluded all 4,992 crop-progress columns from the clustering process.
+
+---
+
+# Software and Hardware Requirements
+
+Hardware used:
+- Device: Lenovo LOQ 15IAX9
+- Processor: 12th Gen Intel Core i5-12450HX
+- RAM: 24 GB DDR5
+
+Software configuration:
+- Operating System: Ubuntu Linux 24.04 LTS (64-bit)
+- Hadoop: Apache Hadoop 3.3.6 (configured in single-node pseudo-distributed mode)
+- Mahout: Apache Mahout 0.13.0
+- Java: OpenJDK 11
+- Python: Python 3.14 with NumPy
+
+---
+
+# Methodology
+
+Our project followed six practical steps:
+1. Data Analysis: Checked file headers and measured missing values across each column group without loading the full 5.9 GB file into memory.
+2. Feature Selection: Picked 1,322 continuous weather, land-surface, and soil columns for clustering. Preserved FIPS, year, and 6 crop yields separately.
+3. Preprocessing: Handled missing values using column mean imputation and normalized features to the range 0 to 1.
+4. HDFS Storage and Conversion: Uploaded the normalized data into HDFS and converted text vectors into binary SequenceFiles using Mahout's MapReduce converter.
+5. Clustering on Hadoop: Executed K-Means and Fuzzy K-Means clustering jobs with $k=5$ using Hadoop MapReduce on YARN.
+6. Evaluation and Yield Analysis: Evaluated cluster distributions, compared model agreement using the Adjusted Rand Index, and calculated average crop yields and weather conditions for each cluster.
+
+---
+
+# Implementation
+
+### Data Preprocessing
+To avoid running out of memory, we wrote `src/analysis/preprocess.py` to read the dataset in chunks of 5,000 rows using NumPy memory mapping (`mmap_mode="r"`).
+
+There were only 24,960 missing values among the 1,322 selected features, all within the NLDAS land-surface columns. We replaced these missing values with the average of that specific column. This allowed us to keep all 124,320 rows without dropping any records.
+
+Next, we applied Min-Max scaling to bring all values into the range 0 to 1 so that variables with large ranges (such as annual rainfall) would not dominate variables with small ranges (such as soil fractions). The script created two output files:
+- `data/processed/clustering_data.csv`: 124,320 rows and 1,322 normalized columns (1.1 GB).
+- `data/processed/metadata.csv`: 124,320 rows containing FIPS, year, and 6 crop yields in the exact same row order (3.5 MB).
+
+### Storing Data in HDFS
+We verified that Hadoop daemons (NameNode, DataNode, ResourceManager, NodeManager) were running. We then piped the comma-separated data through `tr` to change commas to spaces and streamed the text directly into HDFS:
+```bash
+hdfs dfs -mkdir -p /user/praveen/smart_agriculture/input
+tr ',' ' ' < data/processed/clustering_data.csv | \
+  hdfs dfs -put - /user/praveen/smart_agriculture/input/clustering_data.txt
 ```
-[ Raw Cornell USCrop Dataset: 124,320 x 6,322 ]
-                     |
-                     v
-[ Feature Selection: 1,322 Weather/Land/Soil Features Selected ]
-[ 8 Metadata Columns (FIPS, Year, 6 Crop Yields) Preserved Separately ]
-                     |
-                     v
-[ Min-Max Scaling [0,1] & Mean Imputation (preprocess.py) ]
-                     |
-                     v
-[ Ingestion into HDFS: /user/praveen/smart_agriculture/input/ ]
-                     |
-                     v
-[ Mahout InputDriver MapReduce Conversion -> SequenceFiles (vectors) ]
-                     |
-      +--------------+--------------+
-      |                             |
-      v                             v
-[ Mahout K-Means (k=5) ]     [ Mahout Fuzzy K-Means (k=5) ]
-(10 MR Iterations on YARN)   (10 MR Iterations on YARN)
-      |                             |
-      +--------------+--------------+
-                     |
-                     v
-[ Model Evaluation & Comparison (evaluate_models.py) ]
-                     |
-                     v
-[ Crop Yield Analysis Across Clusters (analyze_crop_yields.py) ]
+This saved disk space by avoiding an extra copy on the local drive.
+
+### Converting to Mahout SequenceFiles
+Mahout cannot read plain text files directly; it requires SequenceFiles containing vector objects. We ran Mahout's `InputDriver` MapReduce job:
+```bash
+MAHOUT_LOCAL="" mahout org.apache.mahout.clustering.conversion.InputDriver \
+  -i /user/praveen/smart_agriculture/input/ \
+  -o /user/praveen/smart_agriculture/vectors/ \
+  -v org.apache.mahout.math.DenseVector
 ```
+Unsetting `MAHOUT_LOCAL=""` is important because if it contains any text, Mahout runs locally in memory instead of submitting jobs to Hadoop. This job created 9 SequenceFile parts under `/user/praveen/smart_agriculture/vectors/`, holding all 124,320 vectors.
+
+### Running K-Means and Fuzzy K-Means
+We chose 5 clusters ($k=5$) to represent broad agricultural regions in the US. Both jobs used random seed 42, Squared Euclidean Distance, and a convergence threshold of 0.01:
+- K-Means was run using `bash src/mahout/run_kmeans.sh`. It ran for its configured maximum of 10 iterations on YARN and finished in approximately 9.80 minutes. Output was stored in `/user/praveen/smart_agriculture/results/kmeans/`.
+- Fuzzy K-Means was run using `bash src/mahout/run_fuzzy_kmeans.sh` with fuzziness factor $m=2.0$. It converged after 6 iterations on YARN and finished in approximately 3.92 minutes. Point assignments were generated using the `-cl` flag to assign each observation to its most likely cluster. Output was stored in `/user/praveen/smart_agriculture/results/fuzzy_kmeans/`.
 
 ---
 
-## 3. Distributed Model Comparison Results
+# Results and Discussion
 
-Both clustering algorithms processed the entire 124,320-record dataset on Hadoop YARN MapReduce using Squared Euclidean Distance with $k=5$:
+### Model Comparison
+Table 1 shows the comparison between the two clustering models:
 
-| Metric | Apache Mahout K-Means | Apache Mahout Fuzzy K-Means | Analysis / Interpretation |
-| :--- | :---: | :---: | :--- |
-| **Cluster Count ($k$)** | **5** | **5** | Equal partition baseline |
-| **Fuzziness Parameter ($m$)** | N/A (Hard) | 2.0 (Soft) | Standard fuzzy exponent |
-| **MapReduce Iterations** | 10 | 10 | Convergence tolerance $\delta=0.01$ |
-| **Hadoop YARN Runtime** | **3.92 minutes** | **9.80 minutes** | **K-Means is 2.5x faster in distributed execution** |
-| **Within-Cluster Sum of Squares (WCSS)** | **1,568,053.21** | **2,152,892.04** | **K-Means produces 27.2% tighter clusters** |
-| **Mean Inter-Cluster Distance** | **5.3406** | **2.2515** | K-Means centroids are significantly better separated |
-| **Min Inter-Cluster Distance** | 2.8332 | 0.2971 | Fuzzy centroids contract toward data mass center |
-| **Max Inter-Cluster Distance** | 8.4852 | 3.9586 | K-Means spans broader feature geometry |
-| **Cluster Sizes (Points)** | [19.9k, 35.8k, 17.2k, 25.7k, 25.7k] | [17.0k, 40.9k, 30.3k, 22.1k, 14.1k] | Balanced spatial distribution |
+| Metric | K-Means | Fuzzy K-Means |
+| :--- | :---: | :---: |
+| Number of Clusters ($k$) | 5 | 5 |
+| Iterations | 10 (reached max) | 6 (converged) |
+| Execution Time | ~9.80 minutes | ~3.92 minutes |
+| Observations Assigned | 124,320 (100%) | 124,320 (100%) |
+| Cluster 0 Size | 19,934 (16.0%) | 16,966 (13.7%) |
+| Cluster 1 Size | 35,765 (28.8%) | 40,889 (32.9%) |
+| Cluster 2 Size | 17,191 (13.8%) | 30,306 (24.4%) |
+| Cluster 3 Size | 25,734 (20.7%) | 22,101 (17.8%) |
+| Cluster 4 Size | 25,696 (20.7%) | 14,058 (11.3%) |
+| Adjusted Rand Index (ARI) | — | 0.4426 |
 
-### Performance Analysis
-- **Compactness:** K-Means strictly minimizes Euclidean point-to-center distances, producing denser and more cohesive clusters.
-- **Separation:** K-Means maintains a mean inter-cluster distance of 5.34 compared to 2.25 for Fuzzy K-Means, preventing cluster collapse.
-- **Computational Efficiency:** Fuzzy K-Means computes continuous $5 \times 1,322$ membership weights for all points across every iteration, resulting in 2.5x higher MapReduce CPU and I/O overhead.
+In our execution, Fuzzy K-Means stopped after 6 iterations taking about 3.92 minutes, while K-Means completed all 10 iterations taking about 9.80 minutes. Both models assigned all 124,320 observations and produced balanced clusters without empty groups.
+
+The Adjusted Rand Index between the two solutions is 0.4426. ARI measures the agreement between two clusterings while adjusting for chance (where 0 means random and 1 means identical). An ARI of 0.4426 indicates moderate agreement between the hard assignments. This happens because counties near cluster borders get divided differently when soft probability weighting is used. ARI is an agreement measure between the two outputs, not a measure of classification accuracy.
+
+### Environmental Characteristics of Clusters
+We calculated average weather and soil properties for each K-Means cluster (Table 2):
+
+| Cluster | Count | Annual Rain (cm / mm) | Mean Temp (°C) | Soil Summary | Profile Interpretation |
+| :---: | :---: | :---: | :---: | :--- | :--- |
+| 0 | 19,934 | 73.6 cm (736 mm) | 7.9°C | 47.4% Sand, 4.78% Organic Matter | Cool, semi-arid northern plains |
+| 1 | 35,765 | 142.0 cm (1,420 mm) | 8.9°C | 49.7% Silt, 7.57% Organic Matter | Silt-loam soil with high organic content |
+| 2 | 17,191 | 147.8 cm (1,478 mm) | 19.0°C | 68.7% Sand, 1.94% Organic Matter | Warm, sandy southern region |
+| 3 | 25,734 | 181.5 cm (1,815 mm) | 14.7°C | 57.2% Silt, 3.33% Organic Matter | High-rainfall, high-silt river basin |
+| 4 | 25,696 | 152.5 cm (1,525 mm) | 15.3°C | 46.5% Sand, 2.76% Organic Matter | Warm, sandy-loam plains |
+
+Note: In the PRISM dataset, weekly rainfall is recorded in centimeters. Summing over 52 weeks gives annual rainfall totals between 73.6 cm and 181.5 cm (736 mm to 1,815 mm). The regional descriptions above are interpretations based on these physical averages, not official administrative zones.
+
+### Crop-Yield Observations
+We matched the cluster assignments to the preserved USDA crop yields. Missing yield values were excluded on a per-crop basis and not treated as zero. Missing yield records indicate unavailable survey data for that county-year, not confirmed crop absence.
+
+The key observations from the K-Means clusters include:
+- Cluster 1 had the highest average corn yield (126.12 bu/acre across 26,810 observations) and highest soybean yield (40.72 bu/acre across 22,707 observations). Cotton yield records were essentially absent (only 1 record).
+- Cluster 2 had the highest concentration of cotton yield records (7,289 observations, averaging 698.33 lbs/acre). Spring wheat had zero valid yield records in this cluster.
+- Cluster 0 had the highest number of spring wheat yield reports (8,139 observations, averaging 42.57 bu/acre), representing over 65% of all spring wheat records in the dataset. Cotton was almost absent (0.17% coverage).
+- Cluster 3 had high corn yields (113.32 bu/acre) and frequent soybean reports, matching its high annual rainfall (181.5 cm).
+- Cluster 4 showed mixed crop reporting, with winter wheat (40.46 bu/acre), grain sorghum (53.15 bu/acre), and cotton (584.81 lbs/acre).
+
+These results suggest that environmental clustering can identify groups with different agricultural characteristics, even though crop yields were never used during the clustering process.
 
 ---
 
-## 4. Agricultural Interpretation & Crop Yield Analysis
+# Limitations
 
-By linking cluster assignments to the preserved USDA county crop yield metadata, we discovered clear agro-ecological profiles:
-
-### Cluster Profile Table
-
-| Cluster | Identified Agro-Ecological Zone | Dominant Crops & Yield Statistics | Distinct Agricultural Role |
-| :---: | :--- | :--- | :--- |
-| **Cluster 1** | **Prime Midwest Corn-Soy Belt** | **Corn:** Mean = 126.12 bu/ac ($N=26,810$)<br>**Soybeans:** Mean = 40.72 bu/ac ($N=22,707$)<br>**Winter Wheat:** Mean = 51.18 bu/ac ($N=18,589$)<br>**Cotton:** 0.00 | Dominates national grain output. High-productivity mollisol soils, abundant growing-season moisture. (Iowa, Illinois, Indiana, Ohio, Minnesota). |
-| **Cluster 2** | **Southern Cotton Belt** | **Upland Cotton:** Mean = 698.33 lbs/ac ($N=7,289$)<br>**Corn:** Mean = 91.62 bu/ac ($N=7,934$)<br>**Soybeans:** Mean = 25.58 bu/ac ($N=5,284$) | Concentrates 55% of all southern cotton county observations. Long frost-free growing seasons, high summer humidity. (MS, AL, GA, AR). |
-| **Cluster 0** | **Northern Plains Spring Wheat Zone** | **Spring Wheat:** Mean = 42.57 bu/ac ($N=8,139$)<br>**Winter Wheat:** Mean = 45.03 bu/ac ($N=11,354$)<br>**Corn:** Mean = 113.11 bu/ac ($N=10,579$) | Accounts for 64% of all US spring wheat county-years. Colder continental winters, short growing window. (North Dakota, South Dakota, Montana). |
-| **Cluster 3** | **Central Transition & Grain Sorghum Zone** | **Grain Sorghum:** Mean = 69.67 bu/ac ($N=7,748$)<br>**Corn:** Mean = 113.32 bu/ac ($N=19,098$)<br>**Soybeans:** Mean = 34.67 bu/ac ($N=18,245$) | Transitional temperate zone. High sorghum yields and diversified grain production. (Kansas, Missouri, Kentucky, Tennessee). |
-| **Cluster 4** | **Western Semi-Arid & Marginal Zone** | **Grain Sorghum:** Mean = 53.15 bu/ac ($N=7,485$)<br>**Cotton:** Mean = 584.81 lbs/ac ($N=5,322$)<br>**Corn:** Mean = 101.11 bu/ac ($N=13,557$) | Semi-arid High Plains and western fringe. Lower soil moisture and higher heat stress suppress average crop yields. (West Texas, OK, CO). |
+1. Single-node setup: Hadoop and Mahout ran in pseudo-distributed mode on a single machine. While this ran real MapReduce jobs, it did not test network communication across multiple physical computers.
+2. Defuzzification: For comparison purposes, Fuzzy K-Means soft memberships were simplified to the single most likely cluster.
+3. Fixed number of clusters: We only tested $k=5$. Testing other values of $k$ could be explored in future work.
+4. Technological changes over time: The dataset covers 40 years (1981–2020). Over this time, better seeds, fertilizers, and equipment improved crop yields independent of weather conditions.
 
 ---
 
-## 5. College-Level Project Conclusions & Takeaways
+# Conclusion
 
-1. **Unsupervised Validation Works:** The clustering models were trained strictly on weather, land, and soil data without crop yields. Despite this blind training, the clusters naturally separated the major US crop belts, validating the predictive power of environmental factors on agricultural productivity.
-2. **Hadoop & Mahout Distributed Scalability:** The entire pipeline scaled seamlessly over 124,320 observations $\times$ 1,322 dimensions using actual Hadoop HDFS storage and YARN MapReduce processing without memory bottlenecks.
-3. **Hard vs. Soft Clustering:** While Fuzzy K-Means offers theoretical flexibility for boundary counties, hard K-Means is computationally superior and provides cleaner, more actionable agro-climatic boundaries for large-scale agricultural planning.
+In this project, we built a working Big Data pipeline for agricultural data using Hadoop and Apache Mahout:
+- Memory-mapped chunk processing allowed us to clean and normalize a 5.9 GB dataset on a standard laptop without memory issues.
+- Mahout executed distributed K-Means and Fuzzy K-Means clustering jobs through Hadoop YARN.
+- Fuzzy K-Means finished in 6 iterations (~3.92 min), while K-Means ran for 10 iterations (~9.80 min), with moderate agreement between their hard assignments (ARI = 0.4426).
+- The resulting clusters showed distinct differences in rainfall, temperature, soil composition, and crop yields. This shows that clustering on weather and soil data alone can group county-years into meaningful agricultural profiles.
+
