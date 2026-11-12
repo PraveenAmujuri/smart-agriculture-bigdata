@@ -141,10 +141,22 @@ Table 1 shows the comparison between the two clustering models:
 | Cluster 3 Size | 25,734 (20.7%) | 22,101 (17.8%) |
 | Cluster 4 Size | 25,696 (20.7%) | 14,058 (11.3%) |
 | Adjusted Rand Index (ARI) | — | 0.4426 |
+| Silhouette Score ($N=5,000$) | 0.1363 | 0.0833 |
+| Davies–Bouldin Index ($N=5,000$) | 1.9229 | 2.4350 |
 
 In our execution, Fuzzy K-Means stopped after 6 iterations taking about 3.92 minutes, while K-Means completed all 10 iterations taking about 9.80 minutes. Both models assigned all 124,320 observations and produced balanced clusters without empty groups.
 
 The Adjusted Rand Index between the two solutions is 0.4426. ARI measures the agreement between two clusterings while adjusting for chance (where 0 means random and 1 means identical). An ARI of 0.4426 indicates moderate agreement between the hard assignments. This happens because counties near cluster borders get divided differently when soft probability weighting is used. ARI is an agreement measure between the two outputs, not a measure of classification accuracy.
+
+### Clustering Quality Evaluation
+To assess cluster compactness and geometric separation without computing full $124,320 \times 124,320$ distance matrices in memory, we calculated the Silhouette Score and the Davies–Bouldin Index on a random sample of 5,000 observations (random seed 42) using the 1,322 normalized environmental features. For Fuzzy K-Means, we used the hard cluster assignments (each point assigned to its highest-membership cluster).
+
+- **Silhouette Score**: Measures how close each point is to points within its assigned cluster relative to points in neighboring clusters, on a scale from -1.0 to +1.0. A score of 0 indicates overlapping cluster boundaries, while values closer to +1.0 indicate distinct separation. K-Means recorded a score of 0.1363, while Fuzzy K-Means recorded 0.0833. Both scores are relatively low, suggesting that the clusters are not strongly separated and that some observations may have similar characteristics across cluster boundaries.
+- **Davies–Bouldin Index**: Evaluates the ratio of within-cluster dispersion to between-cluster separation, where lower values signify tighter and more separated clusters. K-Means scored 1.9229, while Fuzzy K-Means scored 2.4350. K-Means obtained a lower Davies–Bouldin Index, indicating relatively more compact and better-separated clusters than the hard-assignment Fuzzy K-Means solution in this evaluation.
+
+**Overall comparison:** K-Means achieved a higher Silhouette Score (0.1363 vs. 0.0833) and a lower Davies–Bouldin Index (1.9229 vs. 2.4350), indicating better clustering quality according to these internal evaluation metrics. However, Fuzzy K-Means completed execution faster (3.92 minutes compared with 9.80 minutes for K-Means). Therefore, K-Means performed better in terms of measured clustering quality, while Fuzzy K-Means had an execution-time advantage.
+
+These metrics provide useful mathematical characterization of cluster geometry, but they reflect structural algorithmic differences in partitioning continuous data rather than proving one model is inherently superior or more accurate.
 
 ### Environmental Characteristics of Clusters
 We calculated average weather and soil properties for each K-Means cluster (Table 2):
@@ -189,4 +201,4 @@ In this project, we built a working Big Data pipeline for agricultural data usin
 - Mahout executed distributed K-Means and Fuzzy K-Means clustering jobs through Hadoop YARN.
 - Fuzzy K-Means finished in 6 iterations (~3.92 min), while K-Means ran for 10 iterations (~9.80 min), with moderate agreement between their hard assignments (ARI = 0.4426).
 - The resulting clusters showed distinct differences in rainfall, temperature, soil composition, and crop yields. This shows that clustering on weather and soil data alone can group county-years into meaningful agricultural profiles.
-
+- Based on the Silhouette Score and Davies–Bouldin Index, K-Means showed better clustering quality, whereas Fuzzy K-Means completed execution faster.

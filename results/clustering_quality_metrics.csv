@@ -1,0 +1,3 @@
+model,sample_size,random_seed,silhouette_score,davies_bouldin_index
+K-Means,5000,42,0.1363,1.9229
+Fuzzy K-Means,5000,42,0.0833,2.435

@@ -54,8 +54,18 @@ Smart-Agriculture-BigData/
 | Cluster 3 Size | 25,734 (20.7%) | 22,101 (17.8%) |
 | Cluster 4 Size | 25,696 (20.7%) | 14,058 (11.3%) |
 | Adjusted Rand Index (ARI) | — | 0.4426 |
+| Silhouette Score ($N=5,000$) | 0.1363 | 0.0833 |
+| Davies–Bouldin Index ($N=5,000$) | 1.9229 | 2.4350 |
 
-For comparison, each Fuzzy K-Means observation was assigned to its most likely cluster. The Adjusted Rand Index of 0.4426 indicates moderate agreement between the K-Means and Fuzzy K-Means assignments, rather than model accuracy. Linking the clusters to the preserved crop yields showed clear differences: for example, Cluster 1 had the highest average corn yields (126.1 bu/acre), Cluster 2 had the largest number of valid cotton yield records, while Cluster 0 had the largest number of valid spring wheat yield records.
+For comparison, each Fuzzy K-Means observation was assigned to its most likely cluster. The Adjusted Rand Index of 0.4426 indicates moderate agreement between the K-Means and Fuzzy K-Means assignments, rather than model accuracy. 
+
+To evaluate cluster compactness and separation, the Silhouette Score and Davies–Bouldin Index were computed on a random sample of 5,000 observations (random seed 42) across the 1,322 normalized environmental features:
+- **Silhouette Score** measures how well points fit into their assigned cluster compared to neighboring clusters (-1 to +1, higher is better). K-Means scored 0.1363 and Fuzzy K-Means scored 0.0833, Both scores are relatively low, suggesting that the clusters are not strongly separated and that some observations may have similar characteristics across cluster boundaries.
+- **Davies–Bouldin Index** evaluates the ratio of within-cluster scatter to separation between clusters (lower is better). K-Means scored 1.9229 and Fuzzy K-Means scored 2.4350, K-Means obtained a lower Davies–Bouldin Index, indicating relatively more compact and better-separated clusters than the hard-assignment Fuzzy K-Means solution in this evaluation.
+
+Overall, K-Means performed better in terms of clustering quality, achieving a higher Silhouette Score (0.1363) and a lower Davies–Bouldin Index (1.9229). However, Fuzzy K-Means completed execution faster (3.92 minutes compared with 9.80 minutes for K-Means). Therefore, K-Means performed better according to the clustering-quality metrics, while Fuzzy K-Means had an execution-time advantage.
+
+Linking the clusters to the preserved crop yields showed clear differences: for example, Cluster 1 had the highest average corn yields (126.1 bu/acre), Cluster 2 had the largest number of valid cotton yield records, while Cluster 0 had the largest number of valid spring wheat yield records.
 
 ## Project Documentation
 - [Final Project Report](reports/final_report.md) — Final project report covering preprocessing, Hadoop and Mahout setup, clustering results, and agricultural crop-yield analysis.
@@ -118,4 +128,5 @@ For comparison, each Fuzzy K-Means observation was assigned to its most likely c
 5. Run evaluation:
    ```bash
    python3 src/analysis/evaluate_models.py
+   python3 src/analysis/evaluate_clustering_quality.py
    ```
