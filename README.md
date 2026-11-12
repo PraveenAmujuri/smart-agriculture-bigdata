@@ -20,12 +20,13 @@ We used the **Cornell USCrop dataset** (1981–2020), which contains 124,320 cou
 
 ```
 Smart-Agriculture-BigData/
-├── data/       # Raw, processed, and sample dataset files
-├── docs/       # Project methodology and screenshot placeholders
-├── reports/    # Final project report
-├── results/    # Clustering outputs, model metrics, and crop yield analysis
+├── dashboard/   # Optional results explorer (static web app)
+├── data/        # Raw, processed, and sample dataset files
+├── docs/        # Project methodology and screenshot placeholders
+├── reports/     # Final project report
+├── results/     # Clustering outputs, model metrics, and crop yield analysis
 ├── src/        # Python data processing scripts and Mahout shell scripts
-└── README.md   # Project overview, results, and instructions
+└── README.md    # Project overview, results, and instructions
 ```
 
 ## Main Steps Followed
@@ -89,6 +90,10 @@ Linking the clusters to the preserved crop yields showed clear differences: for 
 ![Crop Yield Analysis](docs/screenshots/crop_yield_analysis.png)  
 *Crop-yield analysis across the clusters.*
 
+### Web Results Explorer
+![Web Results Explorer](docs/screenshots/dashboard.png)  
+*Web-based results explorer dashboard for inspecting clustering metrics and datasets.*
+
 ## How to Run the Project
 
 > **Notes:**
@@ -130,3 +135,9 @@ Linking the clusters to the preserved crop yields showed clear differences: for 
    python3 src/analysis/evaluate_models.py
    python3 src/analysis/evaluate_clustering_quality.py
    ```
+
+6. (Optional) View results in web dashboard:
+   ```bash
+   python3 -m http.server 8000
+   ```
+   Open `http://localhost:8000/` in a browser.
